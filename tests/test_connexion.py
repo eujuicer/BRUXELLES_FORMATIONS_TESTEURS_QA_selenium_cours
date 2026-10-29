@@ -1,6 +1,6 @@
 import time
 
-from tests.config import BASE_URL, ORGA_EMAIL, ORGA_PASSWORD
+from tests.config import BASE_URL, ORGA_EMAIL, ORGA_PASSWORD, CLIENT_EMAIL, CLIENT_PASSWORD
 from selenium.webdriver.common.by import By
 import pytest
 from selenium.webdriver.support import expected_conditions as EC
@@ -86,3 +86,45 @@ def test_orga_acces_back_office(driver):
     # Le titre n'apparait qu'une fois la session verifiee, c'est un bon signe que la page est prete
     titre = wait.until(EC.visibility_of_element_located(TITRE))
     assert titre.text == "Back-office"
+
+
+# EXO 6 - Un client ne peut pas entrer dans le back-office
+# Scenario : un client connecte ouvre /admin, il est renvoye vers le catalogue (/)
+# et sa navbar n'a pas de lien "Back-office".
+def test_client_refuse_back_office(driver):
+    # Ouvre la page de connexion
+    driver.get(f"{BASE_URL}/login")
+    # Minuterie reutilisable : chaque wait.until(...) attend au maximum 10 secondes
+    wait = WebDriverWait(driver, 10)
+
+    # ETAPE 1 : se connecter avec le compte CLIENT (identifiants lus dans config.py)
+    email = wait.until(EC.visibility_of_element_located(EMAIL_INPUT))
+    email.clear()
+    email.send_keys(CLIENT_EMAIL)
+
+    password = wait.until(EC.visibility_of_element_located(PASSWORD_INPUT))
+    password.clear()
+    password.send_keys(CLIENT_PASSWORD)
+
+    driver.find_element(*LOGIN_BTN).click()
+
+    # Attendre la fin de la connexion : le bouton "Deconnexion" apparait dans la navbar
+    wait.until(EC.visibility_of_element_located(DECONNEXION))
+
+    # ETAPE 2 : ouvrir /admin directement dans l'URL (un client n'a pas le lien, donc pas de clic)
+    driver.get(f"{BASE_URL}/admin")
+
+    # ETAPE 3 : attendre que l'URL ne se termine plus par /admin (= la redirection a eu lieu)
+    # Aucune condition "EC" ne fait ca : on ecrit la notre avec une lambda.
+    # d = le navigateur, la lambda renvoie True quand l'etat attendu est atteint.
+    wait.until(lambda d: not d.current_url.endswith("/admin"))
+
+    # ETAPE 4 : verifier l'URL finale (on doit etre sur le catalogue)
+    assert driver.current_url == f"{BASE_URL}/"
+
+    # ... et verifier que le lien "Back-office" est ABSENT de la navbar.
+    # find_elements renvoie une liste vide si rien n'est trouve (find_element planterait)
+    # Pourquoi apres l'attente de la redirection ? Juste apres driver.get("/admin"), la page n'a pas
+    # encore redirige : la navbar n'affiche pas encore le lien, meme si un orga l'aurait ensuite.
+    # Verifier trop tot donnerait "absent" a coup sur : un test qui passe sans rien prouver.
+    assert driver.find_elements(*BACK_OFFICE) == []
