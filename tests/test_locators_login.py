@@ -3,10 +3,10 @@
 # Un bon locator en trouve un seul : s'il en trouve plusieurs, Selenium prend le premier
 # sans prevenir (risque de cliquer sur le mauvais) ; s'il n'en trouve aucun, le test plante.
 
-import time
-
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from tests.config import BASE_URL
 
@@ -32,7 +32,9 @@ LOCATORS = [EMAIL, PASSWORD_CSS, PASSWORD_LABEL, SUBMIT_CSS, SUBMIT_XPATH]
 @pytest.mark.parametrize("locator", LOCATORS, ids=lambda loc: loc[1])
 def test_locator_designe_un_seul_element(driver, locator):
     driver.get(f"{BASE_URL}/login")
-    time.sleep(2)  # pause pour voir la page (a retirer ensuite)
+
+    # EXO 4 - On attend que le champ email soit affiche (donc que la page soit chargee) avant de compter
+    WebDriverWait(driver, 10).until(EC.visibility_of_element_located(EMAIL))
 
     # find_elements (au pluriel) renvoie une liste, vide si rien n'est trouve : ideal pour compter
     elements = driver.find_elements(*locator)
