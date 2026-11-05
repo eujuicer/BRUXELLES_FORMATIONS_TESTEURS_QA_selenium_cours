@@ -74,38 +74,56 @@ def test_statut_et_bouton(driver, code, statut, nb_boutons):
     boutons = ligne.find_elements(By.TAG_NAME, "button")
     assert len(boutons) == nb_boutons
 
+
+# Vide un champ puis tape le texte.
+# clear() seul ne suffit pas : EventFlow est en React, qui garde sa propre copie de la valeur.
+# On vide donc aussi au clavier (Ctrl+A puis Suppr), comme le ferait un vrai utilisateur.
 def saisir(driver, locator, texte):
     champ = driver.find_element(*locator)
-    champ.send_keys(Keys.CONTROL, "a")
-    champ.send_keys(Keys.DELETE)
-    champ.send_keys(texte)
+    champ.send_keys(Keys.CONTROL, "a")   # selectionne tout le contenu du champ
+    champ.send_keys(Keys.DELETE)         # supprime la selection : le champ est vide
+    champ.send_keys(texte)               # tape le nouveau texte
 
+
+# EXO 8 : creer un code promo, puis le desactiver
+# Scenario : l'orga cree un code (15 %, 20 usages max), verifie sa ligne, le desactive,
+# et verifie que son statut passe a "inactif" et que son bouton disparait.
 def test_creer_puis_desactiver(driver):
+    # Connexion de l'orga + ouverture de /admin/promos
     ouvrir_codes_promo(driver)
-    code = "TEST" + uuid.uuid4().hex[:6].upper()
-    
+    wait = WebDriverWait(driver, 10)
 
+    # ETAPE 1 : code unique, genere a chaque lancement (jamais ecrit en dur).
+    # Le code reste en base apres le test : le meme code echouerait au 2e lancement.
+    # .upper() car l'appli met le champ en majuscules : sinon la comparaison echouerait.
+    code = "TEST" + uuid.uuid4().hex[:6].upper()
+
+    # ETAPE 2 : remplir les 3 champs, puis cliquer sur "Creer"
+    # Reduction (10) et Usages max (100) sont pre-remplis : saisir() les vide avant de taper.
     saisir(driver, CHAMP_CODE, code)
     saisir(driver, CHAMP_REDUCTION, "15")
     saisir(driver, CHAMP_USAGES, "20")
-
     driver.find_element(*BTN_CREER).click()
-    wait = WebDriverWait(driver, 10)
 
+    # ETAPE 3 : attendre la ligne du nouveau code (le tableau se recharge apres la creation)
+    # Le locator est dans le test car il depend de la variable code.
     LIGNE = (By.XPATH, f"//tr[td[normalize-space()='{code}']]")
-
     ligne = wait.until(EC.visibility_of_element_located(LIGNE))
-    cellules = [td.text for td in ligne.find_elements(By.TAG_NAME, "td")[:5]]
 
+    # On lit le texte des 5 premieres cellules (la 6e contient le bouton) et on les compare
+    cellules = [td.text for td in ligne.find_elements(By.TAG_NAME, "td")[:5]]
     assert cellules == [code, "-15%", "0/20", "—", "actif"]
+
+    # ETAPE 4 : cliquer sur "Desactiver" DANS cette ligne
+    # Le "." au debut du XPath limite la recherche a la ligne (sans lui : toute la page).
     ligne.find_element(By.XPATH, ".//button[normalize-space()='Desactiver']").click()
 
+    # Le tableau se recharge : on attend que le badge de CETTE ligne passe a "inactif".
+    # On utilise un locator plutot que "ligne", qui pointe vers un element remplace par le rechargement.
     BADGE = (By.XPATH, f"//tr[td[normalize-space()='{code}']]//span[contains(@class,'badge')]")
     wait.until(EC.text_to_be_present_in_element(BADGE, "inactif"))
 
+    # ETAPE 5 : plus aucun bouton dans la ligne
+    # On relit la ligne (rechargee) ; find_elements renvoie une liste vide s'il n'y a rien.
     ligne = driver.find_element(*LIGNE)
     assert ligne.find_elements(By.TAG_NAME, "button") == []
-
-
-
-
