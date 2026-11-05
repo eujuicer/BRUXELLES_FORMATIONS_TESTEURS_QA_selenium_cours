@@ -98,7 +98,7 @@ pytest>=8.0
 et installez :
 
 ```bash
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 ```
 
 Il faut aussi que Google Chrome soit installé. Au premier lancement, Selenium télécharge lui-même le programme `chromedriver` qui correspond à votre version de Chrome (c'est le rôle de **Selenium Manager**) : la machine doit avoir accès à Internet à ce moment-là.
@@ -1609,8 +1609,8 @@ driver.delete_all_cookies()
 
 | Outil | Installation | Utilisation |
 |---|---|---|
-| pytest-xdist : tests en parallèle | `pip install pytest-xdist` | `pytest -n 4` |
-| pytest-html : rapport HTML | `pip install pytest-html` | `pytest --html=rapport.html --self-contained-html` |
+| pytest-xdist : tests en parallèle | `uv pip install pytest-xdist` | `pytest -n 4` |
+| pytest-html : rapport HTML | `uv pip install pytest-html` | `pytest --html=rapport.html --self-contained-html` |
 
 Avec pytest-xdist, chaque test doit être indépendant des autres : ses propres données, son propre navigateur. C'est déjà le cas de votre suite EventFlow.
 
