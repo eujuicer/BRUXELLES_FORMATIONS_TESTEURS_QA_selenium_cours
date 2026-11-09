@@ -1,7 +1,11 @@
+import sys
+
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
+
+TOUT_SELECTIONNER = Keys.COMMAND if sys.platform == "darwin" else Keys.CONTROL
 
 
 # EXO 11 - La classe de base de toutes les pages (BasePage)
@@ -76,3 +80,5 @@ class BasePage:
     # C'est au test de l'appeler au bon moment, par exemple apres avoir attendu une redirection.
     def a_le_lien_back_office(self):
         return self.driver.find_elements(*self.LIEN_BACK_OFFICE) != []
+
+

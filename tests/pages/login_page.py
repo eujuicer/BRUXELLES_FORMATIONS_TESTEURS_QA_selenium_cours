@@ -1,5 +1,6 @@
-from tests.config import BASE_URL
 from selenium.webdriver.common.by import By
+
+from tests.config import BASE_URL
 from tests.pages.base_page import BasePage
 
 
