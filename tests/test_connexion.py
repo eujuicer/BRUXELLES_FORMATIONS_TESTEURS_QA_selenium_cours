@@ -1,6 +1,7 @@
 import time
 
 from tests.config import BASE_URL, ORGA_EMAIL, ORGA_PASSWORD, CLIENT_EMAIL, CLIENT_PASSWORD
+from tests.pages.login_page import LoginPage
 from selenium.webdriver.common.by import By
 import pytest
 from selenium.webdriver.support import expected_conditions as EC
@@ -19,31 +20,17 @@ TITRE = (By.CSS_SELECTOR, "h1.page-title")
 
 
 
-# EXO 3 - Un mauvais mot de passe
+# EXO 3 / EXO 10 - Un mauvais mot de passe, reecrit avec LoginPage
 # Un organisateur saisit son email et un mauvais mot de passe : la page doit afficher
 # "Incorrect email or password" et rester sur /login.
-# (Pas d'attente ici volontairement : le test peut echouer, c'est l'objet de l'exo 4.)
-def test_mauvais_mot_de_passe(driver):
-    driver.get(f"{BASE_URL}/login")
-    wait = WebDriverWait(driver, 10)
+# Le test ne contient ni locator, ni attente, ni find_element : tout est dans LoginPage.
+def test_mauvais_mot_de_passe_affiche_une_erreur(driver):
+    # Ouvre /login puis envoie le formulaire (soumettre n'attend pas de connexion reussie)
+    page = LoginPage(driver).ouvrir().soumettre(ORGA_EMAIL, "mauvais-mot-de-passe")
 
-    # Les champs arrivent pre-remplis (compte client) : on les vide avant de taper
-    email = wait.until(EC.visibility_of_element_located(EMAIL_INPUT))
-    email.clear()
-    email.send_keys("orga@eventflow.test")
-    
-
-    mot_de_passe = wait.until(EC.visibility_of_element_located(PASSWORD_INPUT))
-    mot_de_passe.clear()
-    mot_de_passe.send_keys("mauvais-mot-de-passe")
-    
-
-    driver.find_element(*LOGIN_BTN).click()
-   
-
-    # Lecture immediate du message : il peut ne pas etre encore affiche
-    message = wait.until(EC.visibility_of_element_located(ERREUR))
-    assert message.text == "Incorrect email or password"
+    # message_erreur() attend le message, puis renvoie son texte
+    assert page.message_erreur() == "Incorrect email or password"
+    # On est toujours sur la page de connexion
     assert driver.current_url == f"{BASE_URL}/login"
 
 
